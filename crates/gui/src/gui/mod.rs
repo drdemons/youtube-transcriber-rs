@@ -1,12 +1,14 @@
 use std::path::Path;
 
-use yt_transcriber_core::{check_dependencies, downloader, output, transcriber, OutputFormat, WhisperModel};
+use yt_transcriber_core::{check_dependencies, default_output_dir, downloader, output, transcriber, OutputFormat, WhisperModel};
 
 slint::include_modules!();
 
 /// Launch the Slint GUI window.  Blocks until the window is closed.
 pub fn run_gui() -> Result<(), slint::PlatformError> {
     let app = AppWindow::new()?;
+
+    app.set_output_dir(default_output_dir().into());
 
     // ── Dependency check ─────────────────────────────────────────────────────
     if let Err(msg) = check_dependencies() {

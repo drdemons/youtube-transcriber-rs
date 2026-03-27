@@ -1,5 +1,5 @@
 use clap::Parser;
-use yt_transcriber_core::{OutputFormat, WhisperModel};
+use yt_transcriber_core::{default_output_dir, OutputFormat, WhisperModel};
 
 #[derive(Parser, Debug)]
 #[command(
@@ -24,7 +24,7 @@ pub struct Cli {
     pub format: OutputFormat,
 
     /// Output directory
-    #[arg(short = 'o', long, default_value = "output")]
+    #[arg(short = 'o', long, default_value_t = default_output_dir())]
     pub output_dir: String,
 
     /// Proxy URL (e.g. http://127.0.0.1:8080 or socks5://user:pass@host:port)

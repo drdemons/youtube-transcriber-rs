@@ -5,6 +5,7 @@ pub mod tools;
 pub mod transcriber;
 
 pub use deps::check_dependencies;
+pub use tools::default_output_dir;
 
 pub use downloader::VideoInfo;
 pub use transcriber::{TranscriptionResult, TranscriptionSegment, WhisperTranscriber};
