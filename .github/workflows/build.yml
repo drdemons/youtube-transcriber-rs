@@ -1,0 +1,83 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-linux:
+    name: Linux (OpenMP)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: linux-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build CLI
+        run: cargo build --release -p yt-transcriber-cli --features yt-transcriber-core/openmp
+
+      - name: Build GUI
+        run: cargo build --release -p yt-transcriber-gui --features yt-transcriber-core/openmp
+
+      - name: Upload CLI
+        uses: actions/upload-artifact@v4
+        with:
+          name: yt-transcriber-linux-cli
+          path: target/release/yt-transcriber
+
+      - name: Upload GUI
+        uses: actions/upload-artifact@v4
+        with:
+          name: yt-transcriber-linux-gui
+          path: target/release/yt-transcriber-gui
+
+  build-macos:
+    name: macOS (Metal)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: macos-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build CLI
+        run: cargo build --release -p yt-transcriber-cli --features yt-transcriber-core/metal
+
+      - name: Build GUI
+        run: cargo build --release -p yt-transcriber-gui --features yt-transcriber-core/metal
+
+      - name: Upload CLI
+        uses: actions/upload-artifact@v4
+        with:
+          name: yt-transcriber-macos-cli
+          path: target/release/yt-transcriber
+
+      - name: Upload GUI
+        uses: actions/upload-artifact@v4
+        with:
+          name: yt-transcriber-macos-gui
+          path: target/release/yt-transcriber-gui
