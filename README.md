@@ -129,6 +129,11 @@ crates/
 └── gui/    — graphical interface (Slint)
 ```
 
+## Development
+
+Built with AI assistance (Claude by Anthropic).
+Architecture, design decisions, and code review by the author.
+
 ## License
 
 GNU General Public License v3.0 or later — see [LICENSE](LICENSE).
