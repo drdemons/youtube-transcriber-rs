@@ -12,3 +12,11 @@ anyhow = { workspace = true }
 
 [build-dependencies]
 slint-build = "1"
+
+[package.metadata.bundle]
+name = "YouTube Transcriber"
+identifier = "com.drdemons.youtube-transcriber"
+version = "0.1.0"
+copyright = "Copyright (c) 2026 drdemons. Licensed under GPL-3.0-or-later."
+category = "public.app-category.utilities"
+short_description = "Extract text from YouTube videos using Whisper AI"

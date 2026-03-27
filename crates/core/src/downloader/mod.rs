@@ -2,6 +2,8 @@ use anyhow::{bail, Context, Result};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+use crate::tools::tool_path;
+
 pub struct VideoInfo {
     pub title: String,
     pub uploader: String,
@@ -10,7 +12,7 @@ pub struct VideoInfo {
 
 /// Получить метаданные видео без скачивания
 pub fn get_video_info(url: &str, proxy: Option<&str>) -> Result<VideoInfo> {
-    let mut cmd = Command::new("yt-dlp");
+    let mut cmd = Command::new(tool_path("yt-dlp"));
     cmd.args(["--dump-json", "--no-download", url]);
     if let Some(p) = proxy {
         cmd.args(["--proxy", p]);
@@ -42,13 +44,16 @@ pub fn download_audio(url: &str, output_dir: &Path, proxy: Option<&str>) -> Resu
     std::fs::create_dir_all(output_dir)?;
 
     let template = output_dir.join("%(title)s.%(ext)s");
+    let ffmpeg = tool_path("ffmpeg");
 
-    let mut cmd = Command::new("yt-dlp");
+    let mut cmd = Command::new(tool_path("yt-dlp"));
     cmd.args([
         "--no-playlist",
         "-x",
         "--audio-format",
         "wav",
+        "--ffmpeg-location",
+        ffmpeg.to_str().unwrap(),
         "--postprocessor-args",
         // Ресэмплируем до 16кГц моно — именно этого ожидает Whisper
         "ffmpeg:-ar 16000 -ac 1",

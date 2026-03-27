@@ -1,4 +1,5 @@
 use std::process::Command;
+use crate::tools::tool_path;
 
 #[allow(dead_code)]
 struct Tool {
@@ -57,7 +58,7 @@ pub fn check_dependencies() -> Result<(), String> {
 }
 
 fn is_installed(tool: &Tool) -> bool {
-    Command::new(tool.name)
+    Command::new(tool_path(tool.name))
         .args(tool.check_args)
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())

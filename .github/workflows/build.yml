@@ -47,7 +47,7 @@ jobs:
           path: target/release/yt-transcriber-gui
 
   build-macos:
-    name: macOS (Metal)
+    name: macOS (Metal, .app bundle)
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -64,11 +64,44 @@ jobs:
             target
           key: macos-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Install cargo-bundle
+        run: cargo install cargo-bundle
+
+      - name: Install ffmpeg and dylibbundler
+        run: brew install ffmpeg dylibbundler
+
+      - name: Download yt-dlp
+        run: |
+          curl -L "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos" -o yt-dlp
+          chmod +x yt-dlp
+
       - name: Build CLI
         run: cargo build --release -p yt-transcriber-cli --features yt-transcriber-core/metal
 
-      - name: Build GUI
-        run: cargo build --release -p yt-transcriber-gui --features yt-transcriber-core/metal
+      - name: Build .app bundle
+        run: cargo bundle --release -p yt-transcriber-gui --features yt-transcriber-core/metal
+
+      - name: Bundle ffmpeg and yt-dlp into .app
+        run: |
+          APP="target/release/bundle/osx/YouTube Transcriber.app"
+          MACOS="$APP/Contents/MacOS"
+          FRAMEWORKS="$APP/Contents/Frameworks"
+          mkdir -p "$FRAMEWORKS"
+
+          # Copy yt-dlp (standalone binary)
+          cp yt-dlp "$MACOS/yt-dlp"
+
+          # Copy ffmpeg and bundle its dylibs
+          cp "$(brew --prefix ffmpeg)/bin/ffmpeg" "$MACOS/ffmpeg"
+          dylibbundler -od -b \
+            -x "$MACOS/ffmpeg" \
+            -d "$FRAMEWORKS/" \
+            -p @executable_path/../Frameworks/
+
+      - name: Create zip
+        run: |
+          cd target/release/bundle/osx
+          zip -r yt-transcriber-macos.zip "YouTube Transcriber.app"
 
       - name: Upload CLI
         uses: actions/upload-artifact@v4
@@ -76,8 +109,8 @@ jobs:
           name: yt-transcriber-macos-cli
           path: target/release/yt-transcriber
 
-      - name: Upload GUI
+      - name: Upload .app bundle
         uses: actions/upload-artifact@v4
         with:
-          name: yt-transcriber-macos-gui
-          path: target/release/yt-transcriber-gui
+          name: yt-transcriber-macos-app
+          path: target/release/bundle/osx/yt-transcriber-macos.zip

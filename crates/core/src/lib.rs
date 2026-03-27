@@ -1,6 +1,7 @@
 pub mod deps;
 pub mod downloader;
 pub mod output;
+pub mod tools;
 pub mod transcriber;
 
 pub use deps::check_dependencies;
