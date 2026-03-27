@@ -1,0 +1,13 @@
+[package]
+name = "yt-transcriber-gui"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+yt-transcriber-core = { path = "../core" }
+slint = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+
+[build-dependencies]
+slint-build = "1"

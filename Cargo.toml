@@ -1,0 +1,28 @@
+[workspace]
+members = ["crates/core", "crates/cli", "crates/gui"]
+resolver = "2"
+
+# Build commands:
+#   Linux  (OpenMP multi-thread):  cargo build --release -p yt-transcriber-cli --features yt-transcriber-core/openmp
+#   macOS  (Metal GPU):            cargo build --release -p yt-transcriber-gui --features yt-transcriber-core/metal
+#   macOS  (Apple Neural Engine):  cargo build --release -p yt-transcriber-gui --features yt-transcriber-core/coreml
+#   Plain  (single-threaded):      cargo build --release
+
+[workspace.dependencies]
+anyhow     = "1.0"
+tokio      = { version = "1", features = ["full"] }
+serde      = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+hound      = "3.5"
+hf-hub     = { version = "0.5", features = ["tokio"] }
+whisper-rs = "0.13"
+clap       = { version = "4", features = ["derive"] }
+indicatif  = "0.17"
+console    = "0.15"
+slint      = "1"
+
+[profile.release]
+opt-level     = 3
+lto           = true
+codegen-units = 1
+strip         = true

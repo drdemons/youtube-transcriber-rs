@@ -1,0 +1,6 @@
+/target
+.idea
+output/*.txt
+output/*.srt
+output/*.vtt
+output/*.wav

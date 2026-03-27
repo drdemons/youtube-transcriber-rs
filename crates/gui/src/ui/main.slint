@@ -1,0 +1,332 @@
+import { ComboBox, LineEdit, CheckBox, ScrollView } from "std-widgets.slint";
+
+export component AppWindow inherits Window {
+    title: "YouTube Transcriber";
+    preferred-width: 720px;
+    preferred-height: 760px;
+    background: #f0f2f5;
+
+    // ── Input bindings ────────────────────────────────────────────────────────
+    in-out property <string> url: "";
+    in-out property <int>    model-index: 1;
+    in-out property <string> language: "en";
+    in-out property <int>    format-index: 0;
+    in-out property <string> output-dir: "output";
+    in-out property <string> proxy: "";
+    in-out property <bool>   use-proxy: false;
+    in-out property <bool>   proxy-expanded: false;
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    in property <bool>   is-running: false;
+    in property <string> status-text: "Ready";
+    in property <float>  progress: 0.0;
+    in property <bool>   has-result: false;
+    in property <bool>   has-warning: false;
+    in property <string> result-preview: "";
+    in property <string> output-path: "";
+
+    // ── Callbacks ─────────────────────────────────────────────────────────────
+    callback start-clicked();
+    callback open-folder-clicked();
+
+    ScrollView {
+        width: parent.width;
+        height: parent.height;
+        viewport-width: parent.width;
+        viewport-height: page.preferred-height + 64px;
+
+        page := VerticalLayout {
+            padding-left: 60px;
+            padding-right: 60px;
+            padding-top: 32px;
+            padding-bottom: 32px;
+            spacing: 20px;
+            width: root.width;
+
+            // ── Header ──────────────────────────────────────────────────────
+            VerticalLayout {
+                spacing: 6px;
+                Text {
+                    text: "🎬  YouTube Transcriber RS";
+                    font-size: 26px;
+                    font-weight: 700;
+                    color: #1565c0;
+                    horizontal-alignment: center;
+                }
+                Text {
+                    text: "Extract text from YouTube videos using Whisper AI";
+                    font-size: 12px;
+                    color: #78909c;
+                    horizontal-alignment: center;
+                }
+            }
+
+            // ── URL input ────────────────────────────────────────────────────
+            LineEdit {
+                height: 52px;
+                placeholder-text: "YouTube URL";
+                text <=> root.url;
+                enabled: !root.is-running;
+            }
+
+            // ── Settings card ────────────────────────────────────────────────
+            Rectangle {
+                height: settings-inner.preferred-height;
+                background: white;
+                border-radius: 10px;
+                drop-shadow-offset-x: 0px;
+                drop-shadow-offset-y: 2px;
+                drop-shadow-blur: 10px;
+                drop-shadow-color: #0000001a;
+
+                settings-inner := VerticalLayout {
+                    padding: 20px;
+                    spacing: 14px;
+
+                    VerticalLayout {
+                        spacing: 3px;
+                        Text {
+                            text: "Settings";
+                            font-size: 15px;
+                            font-weight: 700;
+                            color: #212121;
+                        }
+                        Text {
+                            text: "Model, Language, Format";
+                            font-size: 12px;
+                            color: #9e9e9e;
+                        }
+                    }
+
+                    Rectangle { height: 1px; background: #eeeeee; }
+
+                    // Whisper Model
+                    VerticalLayout {
+                        spacing: 5px;
+                        Text { text: "Whisper Model"; font-size: 11px; color: #9e9e9e; }
+                        ComboBox {
+                            height: 44px;
+                            model: ["Tiny (~39 MB)", "Base — Recommended (~74 MB)", "Small (~244 MB)", "Medium (~769 MB)", "Large (~1.5 GB)"];
+                            current-index <=> root.model-index;
+                            enabled: !root.is-running;
+                        }
+                    }
+
+                    // Language + Format row
+                    HorizontalLayout {
+                        spacing: 12px;
+                        VerticalLayout {
+                            spacing: 5px;
+                            horizontal-stretch: 1;
+                            Text { text: "Audio Language"; font-size: 11px; color: #9e9e9e; }
+                            LineEdit {
+                                height: 44px;
+                                placeholder-text: "en";
+                                text <=> root.language;
+                                enabled: !root.is-running;
+                            }
+                        }
+                        VerticalLayout {
+                            spacing: 5px;
+                            horizontal-stretch: 2;
+                            Text { text: "Output Format"; font-size: 11px; color: #9e9e9e; }
+                            ComboBox {
+                                height: 44px;
+                                model: ["Text (.txt)", "SubRip (.srt)", "WebVTT (.vtt)"];
+                                current-index <=> root.format-index;
+                                enabled: !root.is-running;
+                            }
+                        }
+                    }
+
+                    // Output directory
+                    VerticalLayout {
+                        spacing: 5px;
+                        Text { text: "Output Directory"; font-size: 11px; color: #9e9e9e; }
+                        LineEdit {
+                            height: 44px;
+                            placeholder-text: "output";
+                            text <=> root.output-dir;
+                            enabled: !root.is-running;
+                        }
+                    }
+                }
+            }
+
+            // ── Proxy card (collapsible) ─────────────────────────────────────
+            Rectangle {
+                height: proxy-inner.preferred-height;
+                background: white;
+                border-radius: 10px;
+                drop-shadow-offset-x: 0px;
+                drop-shadow-offset-y: 2px;
+                drop-shadow-blur: 10px;
+                drop-shadow-color: #0000001a;
+
+                proxy-inner := VerticalLayout {
+                    padding: 20px;
+                    spacing: 14px;
+
+                    // Clickable header row
+                    proxy-header := TouchArea {
+                        height: 20px;
+                        clicked => { root.proxy-expanded = !root.proxy-expanded; }
+
+                        HorizontalLayout {
+                            spacing: 8px;
+                            Text {
+                                text: "Proxy Settings";
+                                font-size: 13px;
+                                font-weight: 700;
+                                color: proxy-header.has-hover ? #e65100 : #f57c00;
+                                animate color { duration: 120ms; }
+                                vertical-alignment: center;
+                                horizontal-stretch: 1;
+                            }
+                            Text {
+                                text: root.proxy-expanded ? "▲" : "▼";
+                                font-size: 11px;
+                                color: #f57c00;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+
+                    // Collapsible content
+                    if root.proxy-expanded : CheckBox {
+                        text: "Use Proxy";
+                        checked <=> root.use-proxy;
+                        enabled: !root.is-running;
+                    }
+
+                    if root.proxy-expanded : LineEdit {
+                        height: 44px;
+                        placeholder-text: "http://127.0.0.1:8080";
+                        text <=> root.proxy;
+                        enabled: !root.is-running && root.use-proxy;
+                    }
+                }
+            }
+
+            // ── Progress (while running / after done) ────────────────────────
+            if root.is-running || root.has-result : VerticalLayout {
+                spacing: 8px;
+                Text {
+                    text: root.status-text;
+                    font-size: 12px;
+                    color: root.has-warning ? #c62828 : root.is-running ? #1976d2 : #388e3c;
+                    horizontal-alignment: center;
+                }
+                Rectangle {
+                    height: 6px;
+                    border-radius: 3px;
+                    background: #dde3ed;
+                    Rectangle {
+                        y: 0;
+                        height: parent.height;
+                        width: parent.width * root.progress;
+                        border-radius: 3px;
+                        background: root.is-running ? #1976d2 : #388e3c;
+                        animate width { duration: 400ms; easing: ease-out; }
+                    }
+                }
+            }
+
+            // ── Result preview ───────────────────────────────────────────────
+            if root.has-result : Rectangle {
+                height: preview-inner.preferred-height;
+                background: white;
+                border-radius: 10px;
+                drop-shadow-offset-x: 0px;
+                drop-shadow-offset-y: 2px;
+                drop-shadow-blur: 10px;
+                drop-shadow-color: #0000001a;
+
+                preview-inner := VerticalLayout {
+                    padding: 16px;
+                    spacing: 10px;
+
+                    Text { text: "Preview"; font-size: 13px; font-weight: 700; color: #212121; }
+
+                    Rectangle {
+                        height: 120px;
+                        border-width: 1px;
+                        border-color: #eeeeee;
+                        border-radius: 6px;
+                        background: #fafafa;
+                        clip: true;
+
+                        ScrollView {
+                            width: parent.width;
+                            height: parent.height;
+                            Text {
+                                text: root.result-preview;
+                                font-size: 12px;
+                                wrap: word-wrap;
+                                width: parent.viewport-width - 16px;
+                                x: 8px;
+                                y: 8px;
+                                color: #424242;
+                            }
+                        }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Text {
+                            text: "📁 " + root.output-path;
+                            font-size: 11px;
+                            color: #9e9e9e;
+                            vertical-alignment: center;
+                            overflow: elide;
+                            horizontal-stretch: 1;
+                        }
+                        Rectangle {
+                            width: 110px;
+                            height: 34px;
+                            border-radius: 17px;
+                            background: open-ta.has-hover ? #1565c0 : #1976d2;
+                            animate background { duration: 150ms; }
+                            open-ta := TouchArea { clicked => { root.open-folder-clicked(); } }
+                            Text {
+                                text: "Open Folder";
+                                color: white;
+                                font-size: 12px;
+                                font-weight: 600;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── Start button (pill, centered) ────────────────────────────────
+            HorizontalLayout {
+                alignment: center;
+                Rectangle {
+                    width: 220px;
+                    height: 50px;
+                    border-radius: 25px;
+                    background: btn-ta.has-hover && !root.is-running && root.url != "" ? #1565c0 :
+                                !root.is-running && root.url != "" ? #1976d2 : #b0bec5;
+                    animate background { duration: 150ms; }
+
+                    btn-ta := TouchArea {
+                        enabled: !root.is-running && root.url != "";
+                        clicked => { root.start-clicked(); }
+                    }
+
+                    Text {
+                        text: root.is-running ? "⏳  Working..." : "▶  Start Transcription";
+                        color: white;
+                        font-size: 14px;
+                        font-weight: 700;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

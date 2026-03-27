@@ -1,0 +1,12 @@
+[package]
+name = "yt-transcriber-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+yt-transcriber-core = { path = "../core" }
+clap = { workspace = true }
+indicatif = { workspace = true }
+console = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
